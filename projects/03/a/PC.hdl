@@ -1,0 +1,36 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/PC.hdl
+
+/**
+ * A 16-bit counter with load and reset control bits.
+ * if      (reset[t] == 1) out[t+1] = 0
+ * else if (load[t] == 1)  out[t+1] = in[t]
+ * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
+ * else                    out[t+1] = out[t]
+ */
+
+CHIP PC {
+    IN in[16],load,inc,reset;
+    OUT out[16];
+
+    PARTS:
+    Not(in=reset, out=notreset);
+    And(a=load, b=notreset, out=loadexclusive);
+
+    Not(in=load, out=notload);
+    And(a=notreset, b=notload, out=notset);
+    And(a=inc, b=notset, out=incexclusive);
+
+    Mux16(a=prevout, b=in, sel=loadexclusive, out=internalin);
+
+    ALU(
+        x=internalin, y[0]=incexclusive, y[1..15]=false,
+        zx=reset, nx=false,
+        zy=false, ny=false,
+        f=true, no=false,
+        out=internalout, zr=unused1, ng=unused2
+    );
+    Register(in=internalout, load=true, out=out, out=prevout);
+}
